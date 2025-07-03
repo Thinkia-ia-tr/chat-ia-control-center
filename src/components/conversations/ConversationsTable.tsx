@@ -23,29 +23,44 @@ const getChannelDisplayName = (channel: string): string => {
 const formatClientValue = (client: any): string => {
   if (!client) return "Sin cliente";
   
-  const clientType = client.type || 'id';
-  let clientValue = client.value || '';
-  
-  // Asegurar que el valor es un string
-  if (typeof clientValue !== 'string') {
-    clientValue = clientValue.toString();
+  // Si es un número directo (como viene de la base de datos)
+  if (typeof client === 'number') {
+    const clientStr = client.toString();
+    // Si parece un teléfono (más de 9 dígitos), formatearlo
+    if (clientStr.length >= 9) {
+      return `+${clientStr}`;
+    }
+    return clientStr;
   }
   
-  // Para teléfonos, mantener el formato como viene de la base de datos (+34 xxx xxx xxx)
-  if (clientType === 'phone') {
-    return clientValue;
-  } 
-  else if (clientType === 'id') {
-    // Para IDs, validar formato UUID
-    const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    if (!uuidPattern.test(clientValue)) {
+  // Si es un objeto con type y value
+  if (typeof client === 'object' && client.type && client.value) {
+    const clientType = client.type;
+    let clientValue = client.value;
+    
+    // Asegurar que el valor es un string
+    if (typeof clientValue !== 'string') {
+      clientValue = clientValue.toString();
+    }
+    
+    // Para teléfonos, mantener el formato como viene
+    if (clientType === 'phone') {
+      return clientValue;
+    } 
+    else if (clientType === 'id') {
       return clientValue;
     }
+    
     return clientValue;
   }
   
-  // Para cualquier otro tipo, devolver el valor sin cambios
-  return clientValue;
+  // Si es un string directo
+  if (typeof client === 'string') {
+    return client;
+  }
+  
+  // Para cualquier otro caso, convertir a string
+  return client.toString();
 };
 
 // Function to shorten UUID for display while keeping full value in tooltip
