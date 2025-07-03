@@ -36,31 +36,67 @@ const shortenUUID = (uuid: string): string => {
 const formatClientValue = (client: any): string => {
   if (!client) return "Sin cliente";
   
-  const clientType = client.type || 'id';
-  let clientValue = client.value || '';
-  
-  // Asegurar que el valor es un string
-  if (typeof clientValue !== 'string') {
-    clientValue = clientValue.toString();
+  // Si es un número directo (como viene de la base de datos)
+  if (typeof client === 'number') {
+    const clientStr = client.toString();
+    // Si parece un teléfono (más de 9 dígitos), formatearlo
+    if (clientStr.length >= 9) {
+      // Extraer los primeros 2 dígitos como código de país
+      const countryCode = clientStr.substring(0, 2);
+      const phoneNumber = clientStr.substring(2);
+      return `+${countryCode} ${phoneNumber}`;
+    }
+    return clientStr;
   }
   
-  // Para teléfonos, mantener el formato como viene de la base de datos (+34 xxx xxx xxx)
-  if (clientType === 'phone') {
-    return clientValue;
-  } 
-  else if (clientType === 'id') {
-    // Para IDs, mostrar formato UUID
-    const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    if (!uuidPattern.test(clientValue)) {
-      // Si no tiene el formato correcto, solo devolver el valor tal cual
+  // Si es un objeto con type y value
+  if (typeof client === 'object' && client.type && client.value) {
+    const clientType = client.type;
+    let clientValue = client.value;
+    
+    // Asegurar que el valor es un string
+    if (typeof clientValue !== 'string') {
+      clientValue = clientValue.toString();
+    }
+    
+    // Para teléfonos, formatear correctamente
+    if (clientType === 'phone') {
+      // Limpiar el valor para obtener solo números
+      const numbersOnly = clientValue.replace(/[^\d]/g, '');
+      
+      // Si tiene al menos 9 dígitos, formatearlo
+      if (numbersOnly.length >= 9) {
+        const countryCode = numbersOnly.substring(0, 2);
+        const phoneNumber = numbersOnly.substring(2);
+        return `+${countryCode} ${phoneNumber}`;
+      }
+      
+      return clientValue;
+    } 
+    else if (clientType === 'id') {
       return clientValue;
     }
-    // Si tiene formato UUID, devolverlo tal cual
+    
     return clientValue;
   }
   
-  // Para cualquier otro tipo, devolver el valor sin cambios
-  return clientValue;
+  // Si es un string directo
+  if (typeof client === 'string') {
+    // Limpiar el string para obtener solo números
+    const numbersOnly = client.replace(/[^\d]/g, '');
+    
+    // Si tiene al menos 9 dígitos y parece un teléfono, formatearlo
+    if (numbersOnly.length >= 9) {
+      const countryCode = numbersOnly.substring(0, 2);
+      const phoneNumber = numbersOnly.substring(2);
+      return `+${countryCode} ${phoneNumber}`;
+    }
+    
+    return client;
+  }
+  
+  // Para cualquier otro caso, convertir a string
+  return client.toString();
 };
 
 export function RecentConversations({ startDate, endDate }: RecentConversationsProps) {
@@ -91,7 +127,7 @@ export function RecentConversations({ startDate, endDate }: RecentConversationsP
       accessorKey: "client",
       cell: ({ row }: any) => {
         const client = row.original.client;
-        const clientValue = formatClientValue(client);
+        const formattedValue = formatClientValue(client);
         
         return (
           <div className="w-full">
@@ -99,11 +135,11 @@ export function RecentConversations({ startDate, endDate }: RecentConversationsP
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="block cursor-help">
-                    {client?.type === 'phone' ? clientValue : shortenUUID(clientValue)}
+                    {client?.type === 'phone' ? formattedValue : shortenUUID(formattedValue)}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="max-w-xs break-all">{clientValue}</p>
+                  <p className="max-w-xs break-all">{formattedValue}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
