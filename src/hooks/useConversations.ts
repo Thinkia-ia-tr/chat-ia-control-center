@@ -77,7 +77,8 @@ export function useConversations(startDate?: Date, endDate?: Date) {
       try {
         console.log("Fetching conversations with date range:", startDate, endDate);
         
-        let query = supabase
+        // First get conversations
+        let conversationsQuery = supabase
           .from('conversations')
           .select('*');
         
@@ -88,32 +89,53 @@ export function useConversations(startDate?: Date, endDate?: Date) {
           
           console.log("Using date filters:", startDate.toISOString(), adjustedEndDate.toISOString());
           
-          query = query.gte('date', startDate.toISOString())
-                      .lte('date', adjustedEndDate.toISOString());
+          conversationsQuery = conversationsQuery.gte('date', startDate.toISOString())
+                               .lte('date', adjustedEndDate.toISOString());
         }
         
-        const { data, error } = await query.order('date', { ascending: false });
+        const { data: conversations, error: conversationsError } = await conversationsQuery.order('date', { ascending: false });
         
-        if (error) {
-          console.error("Error fetching conversations:", error);
+        if (conversationsError) {
+          console.error("Error fetching conversations:", conversationsError);
           toast({
             title: "Error",
             description: "No se pudieron cargar las conversaciones",
             variant: "destructive"
           });
-          throw error;
+          throw conversationsError;
         }
         
-        console.log("Conversations raw data:", data);
-        
-        // Return empty array if no data found
-        if (!data || data.length === 0) {
+        if (!conversations || conversations.length === 0) {
           console.log("No conversations found");
           return [];
         }
         
+        // Get message counts for each conversation
+        const conversationIds = conversations.map(conv => conv.id);
+        const { data: messageCounts, error: messageError } = await supabase
+          .from('messages')
+          .select('conversation_id')
+          .in('conversation_id', conversationIds);
+        
+        if (messageError) {
+          console.error("Error fetching message counts:", messageError);
+          // Continue without message counts if there's an error
+        }
+        
+        // Count messages per conversation
+        const messageCountMap = new Map<string, number>();
+        if (messageCounts) {
+          messageCounts.forEach(msg => {
+            const count = messageCountMap.get(msg.conversation_id) || 0;
+            messageCountMap.set(msg.conversation_id, count + 1);
+          });
+        }
+        
+        console.log("Conversations raw data:", conversations);
+        console.log("Message counts:", messageCountMap);
+        
         // Transform and normalize the data
-        const processedData = data.map(item => {
+        const processedData = conversations.map(item => {
           // Procesar y validar datos del cliente
           const clientData = validateClientData(item.client);
           
@@ -144,7 +166,8 @@ export function useConversations(startDate?: Date, endDate?: Date) {
             ...item,
             channel: normalizedChannel, // Usar el canal normalizado
             client: clientData,
-            date: dateObj
+            date: dateObj,
+            messages: messageCountMap.get(item.id) || 0 // Use actual message count
           };
         }) as Conversation[];
         
