@@ -20,12 +20,28 @@ const validateClientData = (client: any): ClientData => {
   // Si no hay datos de cliente, devolver valor por defecto
   if (!client) return clientData;
   
+  // Si es un número (como los teléfonos que vienen directamente de la DB)
+  if (typeof client === 'number') {
+    const clientStr = client.toString();
+    // Si parece un teléfono (más de 9 dígitos)
+    if (clientStr.length >= 9) {
+      return { type: 'phone', value: `+${clientStr}` };
+    } else {
+      return { type: 'id', value: clientStr };
+    }
+  }
+  
   // Convertir string a objeto si es necesario
   if (typeof client === 'string') {
     try {
       clientData = JSON.parse(client) as ClientData;
     } catch (e) {
-      clientData = { type: 'id', value: client };
+      // Si no es JSON válido, tratar como valor directo
+      if (client.length >= 9 && /^\d+$/.test(client)) {
+        clientData = { type: 'phone', value: `+${client}` };
+      } else {
+        clientData = { type: 'id', value: client };
+      }
     }
   } 
   // Si ya es un objeto
