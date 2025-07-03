@@ -126,8 +126,9 @@ export function RecentConversations({ startDate, endDate }: RecentConversationsP
       header: "Mensajes",
       accessorKey: "messages",
       cell: ({ row }: any) => (
-        <div className="w-full flex items-center justify-center text-center">
-          {row.original.messages}
+        <div className="w-full flex items-center justify-center text-center gap-1">
+          <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{row.original.messages || 0}</span>
         </div>
       ),
     },

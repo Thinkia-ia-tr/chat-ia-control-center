@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Conversation } from "./types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MessageSquare } from "lucide-react";
 
 interface ConversationsTableProps {
   data: Conversation[];
@@ -109,8 +110,9 @@ export function ConversationsTable({ data, onRowClick }: ConversationsTableProps
       header: "Mensajes",
       accessorKey: "messages",
       cell: ({ row }: { row: { original: Conversation } }) => (
-        <div className="w-full flex items-center justify-center text-center">
-          {row.original.messages || 0}
+        <div className="w-full flex items-center justify-center text-center gap-1">
+          <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{row.original.messages || 0}</span>
         </div>
       )
     },
