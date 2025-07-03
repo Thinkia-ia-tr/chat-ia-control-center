@@ -44,7 +44,28 @@ export function ProductMentionsList({ startDate, endDate }: ProductMentionsListP
           </Badge>
         </div>
       ),
-      className: "w-[35%]", // Actualizado a 35%
+      className: "w-[25%]",
+    },
+    {
+      header: "Contexto",
+      accessorKey: "context",
+      cell: ({ row }: { row: { original: ProductMention } }) => (
+        <div className="w-full pr-3">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="truncate cursor-help block text-sm text-muted-foreground">
+                  {row.original.context || "Sin contexto disponible"}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-md">
+                <p className="whitespace-pre-wrap">{row.original.context || "Sin contexto disponible"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      ),
+      className: "w-[35%]",
     },
     {
       header: "Conversación",
@@ -54,7 +75,7 @@ export function ProductMentionsList({ startDate, endDate }: ProductMentionsListP
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="truncate cursor-help flex-grow">{row.original.conversation_title}</span>
+                <span className="truncate cursor-help flex-grow text-sm">{row.original.conversation_title}</span>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{row.original.conversation_title}</p>
@@ -74,17 +95,22 @@ export function ProductMentionsList({ startDate, endDate }: ProductMentionsListP
           </Button>
         </div>
       ),
-      className: "w-[50%]", // Se mantiene en 50%
+      className: "w-[25%]",
     },
     {
       header: "Fecha",
       accessorKey: "created_at",
       cell: ({ row }: { row: { original: ProductMention } }) => (
-        <div>
-          {format(new Date(row.original.created_at), "dd MMM yyyy", { locale: es })}
+        <div className="text-right">
+          <div className="text-sm font-medium">
+            {format(new Date(row.original.created_at), "dd MMM yyyy", { locale: es })}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {format(new Date(row.original.created_at), "HH:mm", { locale: es })}
+          </div>
         </div>
       ),
-      className: "w-[15%] text-right", // Actualizado a 15%
+      className: "w-[15%] text-right",
     },
   ];
 
