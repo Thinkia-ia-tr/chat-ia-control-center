@@ -60,39 +60,69 @@ export function useReferrals(startDate?: Date, endDate?: Date) {
       const referrals: Referral[] = data.map((item: any) => {
         let client = { type: '', value: '' };
         
-        // Comprobar si es un canal de WhatsApp
-        const isWhatsApp = item.conversations?.channel === 'whatsapp';
+        // Comprobar si es un canal de WhatsApp (case insensitive)
+        const isWhatsApp = item.conversations?.channel?.toLowerCase() === 'whatsapp';
         
         // Asegurar que el cliente tenga una estructura válida
         if (item.conversations?.client) {
+          // Si es un número directo (como viene de la base de datos)
+          if (typeof item.conversations.client === 'number') {
+            const clientStr = item.conversations.client.toString();
+            // Si parece un teléfono (más de 9 dígitos), formatearlo
+            if (clientStr.length >= 9) {
+              // Extraer los primeros 2 dígitos como código de país
+              const countryCode = clientStr.substring(0, 2);
+              const phoneNumber = clientStr.substring(2);
+              client = { type: 'phone', value: `+${countryCode} ${phoneNumber}` };
+            } else {
+              client = { type: 'id', value: clientStr };
+            }
+          }
           // Si es un string, intentamos parsearlo como JSON
-          if (typeof item.conversations.client === 'string') {
+          else if (typeof item.conversations.client === 'string') {
             try {
               client = JSON.parse(item.conversations.client);
             } catch (e) {
-              console.log("Error parsing client string:", e);
-              client = { type: 'unknown', value: item.conversations.client };
+              // Si no es JSON válido, verificar si es un número
+              const numbersOnly = item.conversations.client.replace(/[^\d]/g, '');
+              if (numbersOnly.length >= 9) {
+                const countryCode = numbersOnly.substring(0, 2);
+                const phoneNumber = numbersOnly.substring(2);
+                client = { type: 'phone', value: `+${countryCode} ${phoneNumber}` };
+              } else {
+                client = { type: 'unknown', value: item.conversations.client };
+              }
             }
-          } else if (typeof item.conversations.client === 'object') {
-            // Si ya es un objeto, lo usamos directamente
+          } 
+          // Si ya es un objeto, lo usamos directamente pero aplicamos formato si es necesario
+          else if (typeof item.conversations.client === 'object') {
             client = item.conversations.client;
+            
+            // Aplicar formato correcto a teléfonos
+            if (client.type === 'phone' && client.value) {
+              const numbersOnly = client.value.replace(/[^\d]/g, '');
+              if (numbersOnly.length >= 9) {
+                const countryCode = numbersOnly.substring(0, 2);
+                const phoneNumber = numbersOnly.substring(2);
+                client.value = `+${countryCode} ${phoneNumber}`;
+              }
+            }
           }
         }
         
         // Para conversaciones de WhatsApp, aseguramos que el tipo sea 'phone'
-        if (isWhatsApp) {
+        if (isWhatsApp && client.type !== 'phone') {
           client.type = 'phone';
           
-          // Si no hay un valor de cliente o no es un número de teléfono válido, generamos uno
-          if (!client.value || !client.value.match(/^\+?[0-9]{9,15}$/)) {
-            // Intentamos extraer un número del valor actual, o generamos uno aleatorio
-            const phoneMatch = client.value && client.value.match(/([0-9]{9,15})/);
-            if (phoneMatch) {
-              client.value = '+' + phoneMatch[1];
-            } else {
-              // Generar un número de teléfono aleatorio con formato internacional español (+34)
-              const randomDigits = Math.floor(600000000 + Math.random() * 300000000);
-              client.value = '+34' + randomDigits;
+          // Si no hay un valor de cliente válido, intentar extraer números
+          if (!client.value) {
+            client.value = '+34 000000000'; // Valor por defecto
+          } else {
+            const numbersOnly = client.value.replace(/[^\d]/g, '');
+            if (numbersOnly.length >= 9) {
+              const countryCode = numbersOnly.substring(0, 2);
+              const phoneNumber = numbersOnly.substring(2);
+              client.value = `+${countryCode} ${phoneNumber}`;
             }
           }
         }
