@@ -26,14 +26,15 @@ const formatClientValue = (client: any): string => {
   // Si es un número directo (como viene de la base de datos)
   if (typeof client === 'number') {
     const clientStr = client.toString();
-    // Si parece un teléfono (más de 9 dígitos), formatearlo
+    // Si parece un teléfono (más de 9 dígitos), formatearlo siempre como +34
     if (clientStr.length >= 9) {
-      // Si empieza con 34, formatear como +34 resto
+      // Si empieza con 34, quitar el 34 inicial y usar el resto
       if (clientStr.startsWith('34')) {
-        const phoneNumber = clientStr.substring(2); // Quitar el 34 inicial
+        const phoneNumber = clientStr.substring(2);
         return `+34 ${phoneNumber}`;
       }
-      return `+${clientStr}`;
+      // Para cualquier otro número largo, añadir +34 al principio
+      return `+34 ${clientStr}`;
     }
     return clientStr;
   }
@@ -48,7 +49,7 @@ const formatClientValue = (client: any): string => {
       clientValue = clientValue.toString();
     }
     
-    // Para teléfonos, formatear correctamente
+    // Para teléfonos, formatear siempre con +34
     if (clientType === 'phone') {
       // Si ya tiene el formato correcto, devolverlo
       if (clientValue.includes('+34 ')) {
@@ -58,10 +59,15 @@ const formatClientValue = (client: any): string => {
       if (clientValue.startsWith('+34') && !clientValue.includes(' ')) {
         return clientValue.replace('+34', '+34 ');
       }
-      // Si es solo números que empiezan con 34
-      if (clientValue.startsWith('34') && /^\d+$/.test(clientValue)) {
-        const phoneNumber = clientValue.substring(2);
-        return `+34 ${phoneNumber}`;
+      // Si es solo números
+      if (/^\d+$/.test(clientValue)) {
+        // Si empieza con 34, quitar el 34 inicial
+        if (clientValue.startsWith('34') && clientValue.length >= 11) {
+          const phoneNumber = clientValue.substring(2);
+          return `+34 ${phoneNumber}`;
+        }
+        // Para cualquier otro número, añadir +34
+        return `+34 ${clientValue}`;
       }
       return clientValue;
     } 
@@ -74,10 +80,15 @@ const formatClientValue = (client: any): string => {
   
   // Si es un string directo
   if (typeof client === 'string') {
-    // Si parece un teléfono español
-    if (client.startsWith('34') && /^\d+$/.test(client) && client.length >= 11) {
-      const phoneNumber = client.substring(2);
-      return `+34 ${phoneNumber}`;
+    // Si parece un teléfono (solo números y más de 9 dígitos)
+    if (/^\d+$/.test(client) && client.length >= 9) {
+      // Si empieza con 34, quitar el 34 inicial
+      if (client.startsWith('34') && client.length >= 11) {
+        const phoneNumber = client.substring(2);
+        return `+34 ${phoneNumber}`;
+      }
+      // Para cualquier otro número largo, añadir +34
+      return `+34 ${client}`;
     }
     return client;
   }
