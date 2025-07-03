@@ -17,12 +17,9 @@ import { Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function ReferralsPage() {
-  const now = new Date();
-  const oneMonthAgo = new Date(now);
-  oneMonthAgo.setMonth(now.getMonth() - 1); // Un mes por defecto
-  
-  const [startDate, setStartDate] = useState<Date>(oneMonthAgo);
-  const [endDate, setEndDate] = useState<Date>(now);
+  // Configurar rango de fechas para mostrar los datos existentes de derivaciones
+  const [startDate, setStartDate] = useState<Date>(new Date('2025-04-01'));
+  const [endDate, setEndDate] = useState<Date>(new Date('2025-05-31'));
   const [selectedReferralType, setSelectedReferralType] = useState<string | null>(null);
   const [availableReferralTypes, setAvailableReferralTypes] = useState<string[]>([]);
 
